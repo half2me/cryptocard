@@ -3,39 +3,32 @@ package applet;
 import javacard.framework.*;
 import javacard.security.*;
 
-public class MainApplet extends Applet implements ISO7816 {
-	private static final short MAX_LENGTH = 256;
-	private static final byte[] hello = {'p','k','i','t','c','h'};
+public abstract class CryptoCard extends Applet implements ISO7816 {
 
-	// Keys
-	private KeyPair kp;
-	private Signature signature;
+    // Constants
+    static final int SCRATCHPAD_SIZE = 256;
+
+	// PIN
+    private int adminPin;
+    private int pin;
+
+	// Key
+	protected KeyPair kp;
 
 	// Signature scratchpad
 	private byte[] scratchpad;
 
-	protected MainApplet() {
-		scratchpad = new byte[256];
-		kp = new KeyPair(KeyPair.ALG_RSA, KeyBuilder.LENGTH_RSA_1024);
-		kp.genKeyPair();
-		signature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
-		signature.init(kp.getPrivate(), Signature.MODE_SIGN);
+	protected CryptoCard() {
+		scratchpad = new byte[SCRATCHPAD_SIZE];
+		kp = newKey();
+        kp.genKeyPair();
 		register();
 	}
 
-	/**
-	 * Installs this applet.
-	 * @param bArray the array containing installation parameters
-	 * @param bOffset the starting offset in bArray
-	 * @param bLength the length in bytes of the parameter data in bArray
-	 */
-	public static void install(byte[] bArray, short bOffset, byte bLength){
-		new MainApplet();
-	}
+	abstract KeyPair newKey();
 
 	/**
-	 * Processes an incoming APDU. Will always respond with the helloFidesmo string,
-	 * regardless of what is received.
+	 * Processes an incoming APDU.
 	 * @see APDU
 	 * @param apdu the incoming APDU
 	 * @exception ISOException with the response bytes per ISO 7816-4
@@ -43,27 +36,17 @@ public class MainApplet extends Applet implements ISO7816 {
 	public void process(APDU apdu) {
 		byte buffer[] = apdu.getBuffer();
 
-		if (this.selectingApplet()) {
-			Util.arrayCopyNonAtomic(hello, (short) 0, buffer, (short) 0, (short) hello.length);
-			apdu.setOutgoingAndSend((short) 0, (short)hello.length);
-			return;
-		}
+		if (this.selectingApplet()) { return; }  // APDU was just selecting our application
 
 		switch (buffer[ISO7816.OFFSET_INS]) {
-			case 0x01:
-				sendHello(apdu);
+			case 0x00:
+				// Send pubkey
 				return;
 			case 0x02:
-				sendPubKeyExp(apdu);
+				// Sign data
 				return;
 			case 0x03:
-				sendPubKeyMod(apdu);
-				return;
-			case 0x04:
-				signData(apdu);
-				return;
-			case 0x05:
-				echo(apdu);
+				// Gen new key
 				return;
 			default:
 				ISOException.throwIt (ISO7816.SW_INS_NOT_SUPPORTED);
@@ -71,6 +54,7 @@ public class MainApplet extends Applet implements ISO7816 {
 	}
 
 	private void signData(APDU apdu) {
+        signature.init(kp.getPrivate(), Signature.MODE_SIGN);
 		byte[] buffer = apdu.getBuffer();
 		//short dataLen = apdu.setIncomingAndReceive();
 

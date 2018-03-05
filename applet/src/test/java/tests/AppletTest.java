@@ -1,6 +1,6 @@
 package tests;
 
-import applet.MainApplet;
+import applet.CryptoCard;
 import com.licel.jcardsim.base.Simulator;
 import javacard.framework.AID;
 import org.junit.Assert;
@@ -41,7 +41,7 @@ public class AppletTest {
 
     @BeforeMethod
     public void setUpMethod() throws Exception {
-        this.simulator.installApplet(appletAID, MainApplet.class);
+        this.simulator.installApplet(appletAID, CryptoCard.class);
         simulator.selectApplet(appletAID);
     }
 
@@ -52,7 +52,7 @@ public class AppletTest {
 
     // Example test
     @Test
-    public void hello() throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException, SignatureException {
+    public void testGetPubKey() {
         // 4. Gut public key
         BigInteger exp = new BigInteger(new ResponseAPDU(simulator.transmitCommand((new CommandAPDU(0x00, 0x02, 0x00, 0x00)).getBytes())).getData());
         BigInteger mod = new BigInteger(new ResponseAPDU(simulator.transmitCommand((new CommandAPDU(0x00, 0x03, 0x00, 0x00)).getBytes())).getData());
