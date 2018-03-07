@@ -8,10 +8,6 @@ public abstract class CryptoCard extends Applet implements ISO7816 {
     // Constants
     static final int SCRATCHPAD_SIZE = 256;
 
-	// PIN
-    private int adminPin;
-    private int pin;
-
 	// Key
 	protected KeyPair kp;
 
@@ -40,54 +36,20 @@ public abstract class CryptoCard extends Applet implements ISO7816 {
 
 		switch (buffer[ISO7816.OFFSET_INS]) {
 			case 0x00:
-				// Send pubkey
+				sendPublicKey(apdu);
 				return;
-			case 0x02:
+			case 0x01:
 				// Sign data
-				return;
-			case 0x03:
-				// Gen new key
 				return;
 			default:
 				ISOException.throwIt (ISO7816.SW_INS_NOT_SUPPORTED);
 		}
 	}
 
-	private void signData(APDU apdu) {
-        signature.init(kp.getPrivate(), Signature.MODE_SIGN);
-		byte[] buffer = apdu.getBuffer();
-		//short dataLen = apdu.setIncomingAndReceive();
-
-		short signLen = signature.sign(buffer, apdu.getOffsetCdata(), apdu.getIncomingLength(), scratchpad, (short) 0);
-
-		Util.arrayCopyNonAtomic(scratchpad, (short) 0, buffer, (short) 0, signLen);
-		apdu.setOutgoingAndSend((short) 0, signLen);
-	}
-
-	private void sendHello(APDU apdu) {
-		byte buffer[] = apdu.getBuffer();
-		Util.arrayCopyNonAtomic(hello, (short)0, buffer, (short)0, (short)hello.length);
-		apdu.setOutgoingAndSend((short)0, (short)hello.length);
-	}
-
-	private void sendPubKeyExp(APDU apdu) {
-		byte buffer[] = apdu.getBuffer();
-		RSAPublicKey pub = (RSAPublicKey) kp.getPublic();
-		short len = pub.getExponent(buffer, (short) 0);
-		apdu.setOutgoingAndSend((short)0, len);
-	}
-
-	private void sendPubKeyMod(APDU apdu) {
-		byte buffer[] = apdu.getBuffer();
-		RSAPublicKey pub = (RSAPublicKey) kp.getPublic();
-		short len = pub.getModulus(buffer, (short) 0);
-		apdu.setOutgoingAndSend((short)0, len);
-	}
-
-	private void echo(APDU apdu) {
-		byte[] buffer = apdu.getBuffer();
-		short len = apdu.getIncomingLength();
-		Util.arrayFillNonAtomic(buffer, (short) 0, (short) 1, (byte) len);
-		apdu.setOutgoingAndSend((short) 0, (short)1);
-	}
+	private void sendPublicKey(APDU apdu) {
+        byte buffer[] = apdu.getBuffer();
+        PublicKey pk = kp.getPublic();
+        byte type = pk.getType();
+        short size = pk.getSize();
+    }
 }

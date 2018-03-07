@@ -1,6 +1,7 @@
 package tests;
 
 import applet.CryptoCard;
+import applet.ECCryptoCard;
 import com.licel.jcardsim.base.Simulator;
 import javacard.framework.AID;
 import org.junit.Assert;
@@ -11,6 +12,7 @@ import javax.smartcardio.ResponseAPDU;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.spec.*;
+import java.util.Arrays;
 
 /**
  * Example test class for the applet
@@ -41,7 +43,7 @@ public class AppletTest {
 
     @BeforeMethod
     public void setUpMethod() throws Exception {
-        this.simulator.installApplet(appletAID, CryptoCard.class);
+        this.simulator.installApplet(appletAID, ECCryptoCard.class);
         simulator.selectApplet(appletAID);
     }
 
@@ -53,24 +55,9 @@ public class AppletTest {
     // Example test
     @Test
     public void testGetPubKey() {
-        // 4. Gut public key
-        BigInteger exp = new BigInteger(new ResponseAPDU(simulator.transmitCommand((new CommandAPDU(0x00, 0x02, 0x00, 0x00)).getBytes())).getData());
-        BigInteger mod = new BigInteger(new ResponseAPDU(simulator.transmitCommand((new CommandAPDU(0x00, 0x03, 0x00, 0x00)).getBytes())).getData());
+        byte[] resp = simulator.transmitCommand((new CommandAPDU(0x00, 0x00, 0x00, 0x00)).getBytes());
+        byte[] resp2 = simulator.transmitCommand((new CommandAPDU(0x00, 0x00, 0x00, 0x00)).getBytes());
 
-        RSAPublicKeySpec spec = new RSAPublicKeySpec(mod, exp);
-        KeyFactory kf = KeyFactory.getInstance("RSA");
-        PublicKey pub = kf.generatePublic(spec);
-
-        // 5. Sign random data
-        SecureRandom random = new SecureRandom();
-        byte[] challenge = new byte[64];
-        random.nextBytes(challenge);
-        byte[] signature = new ResponseAPDU(simulator.transmitCommand((new CommandAPDU(0x00, 0x04, 0x00, 0x00, challenge)).getBytes())).getData();
-
-        // 6. Validate
-        Signature verifier = Signature.getInstance("SHA1withRSA");
-        verifier.initVerify(pub);
-        verifier.update(challenge);
-        Assert.assertTrue(verifier.verify(signature));
+        assert Arrays.equals(resp, resp2);
     }
 }
