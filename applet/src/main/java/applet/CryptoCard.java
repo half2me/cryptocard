@@ -4,10 +4,6 @@ import javacard.framework.*;
 import javacard.security.*;
 
 public abstract class CryptoCard extends Applet implements ISO7816 {
-
-    // Constants
-    static final int SCRATCHPAD_SIZE = 256;
-
 	// Key
 	protected KeyPair kp;
 
@@ -15,7 +11,7 @@ public abstract class CryptoCard extends Applet implements ISO7816 {
 	private byte[] scratchpad;
 
 	protected CryptoCard() {
-		scratchpad = new byte[SCRATCHPAD_SIZE];
+		scratchpad = new byte[256];
 		kp = newKey();
         kp.genKeyPair();
 		register();
