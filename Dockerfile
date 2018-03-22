@@ -1,3 +1,3 @@
-FROM gradle:4.5.1-jdk8
+FROM gradle:4.6.0-jdk8
 
 ADD . /home/gradle
